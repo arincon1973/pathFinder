@@ -1,0 +1,44 @@
+package main
+
+import (
+	"fmt"
+	"testing"
+	astar "github.com/beefsack/go-astar"
+)
+
+// testPath takes a string encoded world, decodes it, calculates a path and
+// checks the expected distance matches.  An expectedDist of -1 expects that no
+// path will be found.
+func testPath(worldInput []string, t *testing.T, expectedDist float64) {
+	// Model the world
+	world := ParseWorld(worldInput)
+
+	for i, _ := range world.Layers {
+		t.Logf("Input world\n%s", world.RenderPath(i, []astar.Pather{}))
+	}
+
+	path, dist, found := world.Path(world.From(), world.To())
+	if !found {
+		t.Log("Could not find a path")
+	} else {
+		for _, p := range path {
+			pT := p.(*Tile)
+			//pathLocs[fmt.Sprintf("%d,%d", pT.X, pT.Y)] = true
+			t.Logf(fmt.Sprintf("%d,%d", pT.X, pT.Y))
+		}
+		//t.Logf("Resulting path\n%s", world.RenderPath(p))
+	}
+	if !found && expectedDist >= 0 {
+		t.Fatal("Could not find a path")
+	}
+	if found && dist != expectedDist {
+		t.Fatalf("Expected dist to be %v but got %v", expectedDist, dist)
+	}
+}
+
+// TestStraightLine checks that having no obstacles results in a straight line path.
+func TestStraightLine(t *testing.T) {
+	s := make([]string,1)
+	s[0] = ".....~......\n.....MM.....\n.F........T.\n....MMM.....\n............"
+	testPath(s, t, 9)
+}

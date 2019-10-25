@@ -1,0 +1,52 @@
+package main
+
+import (
+	"strings"
+)
+
+// Layer is a two dimensional map of Tiles.
+type Layer struct {
+    Grid map[int]map[int]*Tile
+    TotalBlocked int
+}
+
+// ParseLayer parses a textual representation of a world into a world map.
+func ParseLayer(z int, input string) Layer {
+	l := Layer{}
+	for y, row := range strings.Split(strings.TrimSpace(input), "\n") {
+		for x, raw := range row {
+			kind, ok := RuneKinds[raw]
+			if !ok {
+				kind = KindBlocker
+			}
+			if kind == KindBlocker {
+				l.TotalBlocked ++
+			}
+			l.SetTile(&Tile{
+				Kind: kind,
+			}, x, y, z)
+		}
+	}
+	return l
+}
+
+// Tile gets the tile at the given coordinates in the layer.
+func (l Layer) Tile(x, y int) *Tile {
+	if l.Grid[x] == nil {
+		return nil
+	}
+	return l.Grid[x][y]
+}
+
+// SetTile sets a tile at the given coordinates in the layer.
+func (l Layer) SetTile(t *Tile, x, y, z int) {
+	if l.Grid[x] == nil {
+		l.Grid[x] = map[int]*Tile{}
+	}
+	l.Grid[x][y] = t
+	t.X = x
+	t.Y = y
+	t.Z = z
+	t.L = l
+}
+

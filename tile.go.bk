@@ -1,0 +1,93 @@
+package main
+
+import astar "github.com/beefsack/go-astar"
+
+// Kind* constants refer to tile kinds for input and output.
+const (
+	// KindPlain (.) is a plain tile with a movement cost of 1.
+	KindPlain = iota
+	// KindBlocker (X) is a tile which blocks movement.
+	KindBlocker
+	// KindFrom (F) is a tile which marks where the path should be calculated
+	// from.
+	KindFrom
+	// KindTo (T) is a tile which marks the goal of the path.
+	KindTo
+	// KindPath (●) is a tile to represent where the path is in the output.
+	KindPath
+)
+
+// KindRunes map tile kinds to output runes.
+var KindRunes = map[int]rune{
+	KindPlain:    '.',
+	KindBlocker:  'X',
+	KindFrom:     'F',
+	KindTo:       'T',
+	KindPath:     '●',
+}
+
+// KindCosts map tile kinds to movement costs.
+var KindCosts = map[int]float64{
+	KindPlain:    1.0,
+	KindFrom:     1.0,
+	KindTo:       1.0,
+}
+
+// RuneKinds map input runes to tile kinds.
+var RuneKinds = map[rune]int{
+	'.': KindPlain,
+	'X': KindBlocker,
+	'F': KindFrom,
+	'T': KindTo,
+}
+
+// A Tile is a tile in a grid which implements Pather.
+type Tile struct {
+	// Kind is the kind of tile, potentially affecting movement.
+	Kind int
+	// X and Y are the coordinates of the tile.
+	X, Y int
+	// Z is the layer the tile is on
+	Z int
+	// W is a reference to the World that the tile is a part of.
+	L Layer
+}
+
+// PathNeighbors returns the neighbors of the tile, excluding blockers and
+// tiles off the edge of the board.
+func (t *Tile) PathNeighbors() []astar.Pather {
+	neighbors := []astar.Pather{}
+	for _, offset := range [][]int{
+		{-1, 0},
+		{1, 0},
+		{0, -1},
+		{0, 1},
+	} {
+		if n := t.L.Tile(t.X+offset[0], t.Y+offset[1]); n != nil &&
+			n.Kind != KindBlocker {
+			neighbors = append(neighbors, n)
+		}
+	}
+	return neighbors
+}
+
+// PathNeighborCost returns the movement cost of the directly neighboring tile.
+func (t *Tile) PathNeighborCost(to astar.Pather) float64 {
+	toT := to.(*Tile)
+	return KindCosts[toT.Kind]
+}
+
+// PathEstimatedCost uses Manhattan distance to estimate orthogonal distance
+// between non-adjacent nodes.
+func (t *Tile) PathEstimatedCost(to astar.Pather) float64 {
+	toT := to.(*Tile)
+	absX := toT.X - t.X
+	if absX < 0 {
+		absX = -absX
+	}
+	absY := toT.Y - t.Y
+	if absY < 0 {
+		absY = -absY
+	}
+	return float64(absX + absY)
+}

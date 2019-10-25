@@ -1,0 +1,93 @@
+package main
+
+import (
+	"fmt"
+	"strings"
+    astar "github.com/beefsack/go-astar"
+)
+
+// World in a slice of Layers
+type World struct {
+	Layers []Layer
+	BestLayer int
+}
+
+// RenderPath renders a path on top of a world.
+func (w World) RenderPath(layerIndex int, path []astar.Pather) string {
+	layer := w.Layers[layerIndex]
+	width := len(layer.Grid)
+	if width == 0 {
+		return ""
+	}
+	height := len(layer.Grid[0])
+	pathLocs := map[string]bool{}
+	for _, p := range path {
+		pT := p.(*Tile)
+		pathLocs[fmt.Sprintf("%d,%d", pT.X, pT.Y)] = true
+	}
+	rows := make([]string, height)
+	for x := 0; x < width; x++ {
+		for y := 0; y < height; y++ {
+			t := layer.Tile(x, y)
+			r := ' '
+			if pathLocs[fmt.Sprintf("%d,%d", x, y)] {
+				r = KindRunes[KindPath]
+			} else if t != nil {
+				r = KindRunes[t.Kind]
+			}
+			rows[y] += string(r)
+		}
+	}
+	return strings.Join(rows, "\n")
+}
+
+// From gets the from tile from the world.
+func (w World) From() *Tile {
+	return w.FirstOfKind(KindFrom)
+}
+
+// FirstOfKind gets the first tile on the board of a kind, used to get the from
+// and to tiles as there should only be one of each.
+func (w World) FirstOfKind(kind int) *Tile {
+	for _, layer := range w.Layers {
+		for _, row := range layer.Grid {
+			for _, t := range row {
+				if t.Kind == kind {
+					return t
+				}
+			}
+		}
+	}
+	return nil
+}
+
+// To gets the to tile from the world.
+func (w World) To() *Tile {
+	return w.FirstOfKind(KindTo)
+}
+
+func ParseWorld(worldInput []string, ) World{
+	var world World
+	var leastBlocks = len(worldInput)
+	for i, layerInput := range worldInput {
+		layer := ParseLayer(i, layerInput)
+		world.Layers = append(world.Layers, layer)
+		if (layer.TotalBlocked <= leastBlocks) {
+			world.BestLayer = i;
+		}
+	}
+	return world
+}
+
+// Path calculates a short path and the distance between the two Pather nodes.
+//
+// If no path is found, found will be false.
+func (world World) Path(from, to astar.Pather) (path []astar.Pather, distance float64, found bool) {
+	fromTile := world.From()
+	toTile := world.To()
+	bestLayer := world.Layers[world.BestLayer]
+	fromInLayer := bestLayer.Tile(fromTile.X, fromTile.Y)
+	toInLayer := bestLayer.Tile(toTile.X, toTile.Y)
+	p, dist, found := astar.Path(fromInLayer, toInLayer)
+	return p, dist, false
+}
