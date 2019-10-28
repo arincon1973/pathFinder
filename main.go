@@ -47,10 +47,11 @@ func createWorld (context *gin.Context) {
 	fmt.Printf("InputMessage is \n%s\n", msg.WorldInput)
 	////////////////////
 	world = ParseWorld(msg.WorldInput)
-	fmt.Printf("Input world\n%s", world.RenderPath([]astar.Pather{}))
+	renderedWorld := world.RenderPath([]astar.Pather{})
+	fmt.Printf("Input world\n%s", renderedWorld)
 
 	context.JSON(200, gin.H{
-		"message": "pong",
+		"world": renderedWorld,
 	})
 }
 
@@ -65,13 +66,14 @@ func getPath (context *gin.Context) {
 	if !found {
 		fmt.Printf("Could not find a path")
 	} else {
-		worldSizeY := len(world[0]) - 1
 		worldSizeX := len(world)
+		worldSizeY := len(world[0])
 		fmt.Printf("World dimensions: %d, %d", worldSizeX, worldSizeY)
 		fmt.Printf("Resulting path\n")
 		for _, p := range path {
 			pT := p.(*Tile)
-			coordinate := Coordinate{X: worldSizeX - pT.X, Y: worldSizeY - pT.Y}
+			coordinate := Coordinate{X: worldSizeX - pT.X - 1, Y: worldSizeY - pT.Y - 1}
+			//coordinate := Coordinate{X: pT.X, Y: pT.Y}
 			fmt.Printf("coordinate is %+v", coordinate)
 			response.Path = append(response.Path, coordinate)
 			fmt.Printf(fmt.Sprintf("%d,%d\n", pT.X, pT.Y))
@@ -160,8 +162,9 @@ func (t *Tile) PathNeighbors() []astar.Pather {
 
 // PathNeighborCost returns the movement cost of the directly neighboring tile.
 func (t *Tile) PathNeighborCost(to astar.Pather) float64 {
-	toT := to.(*Tile)
-	return KindCosts[toT.Kind]
+	//toT := to.(*Tile)
+	//return KindCosts[toT.Kind]
+	return 1.0
 }
 
 // PathEstimatedCost uses Manhattan distance to estimate orthogonal distance
