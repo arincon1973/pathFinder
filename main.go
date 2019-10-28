@@ -70,13 +70,26 @@ func getPath (context *gin.Context) {
 		worldSizeY := len(world[0])
 		fmt.Printf("World dimensions: %d, %d", worldSizeX, worldSizeY)
 		fmt.Printf("Resulting path\n")
+		initLoc := true
+		var currentX, currentY int
 		for _, p := range path {
 			pT := p.(*Tile)
-			coordinate := Coordinate{X: worldSizeX - pT.X - 1, Y: worldSizeY - pT.Y - 1}
-			//coordinate := Coordinate{X: pT.X, Y: pT.Y}
-			fmt.Printf("coordinate is %+v", coordinate)
-			response.Path = append(response.Path, coordinate)
-			fmt.Printf(fmt.Sprintf("%d,%d\n", pT.X, pT.Y))
+			if !initLoc {
+				nextX := worldSizeX - pT.X - 1
+				nextY := worldSizeY - pT.Y - 1
+				coordinate := Coordinate{X:nextX - currentX, Y: nextY - currentY}
+				//coordinate := Coordinate{X: worldSizeX - pT.X - 1, Y: worldSizeY - pT.Y - 1}
+				//coordinate := Coordinate{X: pT.X, Y: pT.Y}
+				fmt.Printf("coordinate is %+v", coordinate)
+				response.Path = append(response.Path, coordinate)
+				fmt.Printf(fmt.Sprintf("%+v", coordinate))
+				currentX = nextX
+				currentY = nextY
+			} else {
+				initLoc = false
+				currentX = worldSizeX - pT.X - 1
+				currentY = worldSizeY - pT.Y - 1
+			}
 		}
 	}
 	//////////////////
